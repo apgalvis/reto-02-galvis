@@ -1,0 +1,8 @@
+import { BellRing, FileWarning, ShieldAlert } from 'lucide-react';
+import type { ToolCall } from '@/types/agent';
+function record(value: unknown): Record<string, unknown> | null { return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null; }
+export function AlertsSummary({ calls }: { calls: ToolCall[] }) {
+  const alertCalls = calls.filter(call => call.name === 'contratos_alertas');
+  if (!alertCalls.length) return <div className="empty-alerts"><BellRing className="h-5 w-5 text-muted-foreground" /><p>Las alertas aparecerán al consultar el buzón.</p></div>;
+  return <div className="space-y-2">{alertCalls.map((call, i) => { const result = record(call.result ?? call.output); const list = result && (result['alertas'] ?? result['alerts']); return <div key={i} className="alert-result"><div className="flex items-center gap-2 text-xs font-semibold text-foreground"><ShieldAlert className="h-4 w-4 text-warning" />Reporte de alertas</div>{Array.isArray(list) && list.length ? <div className="mt-2 space-y-1.5">{list.map((alert, index) => { const row = record(alert); return <div className="flex gap-2 text-xs text-muted-foreground" key={index}><FileWarning className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" /><span>{row ? String(row['resumen'] ?? row['descripcion'] ?? row['tipo'] ?? JSON.stringify(row)) : String(alert)}</span></div>; })}</div> : <p className="mt-2 text-xs text-muted-foreground">{call.summary || 'Consulta de alertas completada.'}</p>}</div>; })}</div>;
+}

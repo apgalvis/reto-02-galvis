@@ -1,1 +1,47 @@
-The requested file reference is not currently visible. Use files.search or files.list to rediscover the file, then retry with a returned ref_id or file_id.
+import {z} from "zod"
+import {readInbox} from "../domain/buzon.js"
+import {extractContract} from "../domain/extract.js"
+import {validateContract} from "../domain/validate.js"
+import {registerContract} from "../domain/register.js"
+import {buildAlerts} from "../domain/alerts.js"
+import type {ExtractedContract} from "../domain/types.js"
+import type {ToolContext} from "../core/types.js"
+
+const F=z.object({valor:z.unknown().nullable(),confianza:z.number().min(0).max(1),fuente:z.string()})
+const ContractSchema=z.object({
+  tipo_documento:z.enum(["contrato","otrosi","otro"]),
+  id_contrato:F,cliente:F,nit_cliente:F,pais:F,objeto:F,valor:F,valor_indeterminado:F,moneda:F,fecha_inicio:F,fecha_fin:F,requiere_poliza:F,tipo_poliza:F,comercial:F,
+})
+const ok=(data:unknown)=>JSON.stringify({ok:true,data})
+const fail=(error:unknown)=>JSON.stringify({ok:false,error:error instanceof Error?error.message:String(error)})
+
+export const leer_buzon={
+  description:"Lista los mensajes pendientes del buzón y señala cuáles traen un contrato.",
+  args:z.object({}),
+  parameters:{type:"object",properties:{},additionalProperties:false},
+  async execute(_args:{},ctx:ToolContext){try{return ok(await readInbox(ctx.directory))}catch(error){return fail(error)}}
+}
+export const extraer={
+  description:"Extrae de forma determinística los campos del contrato con confianza por campo.",
+  args:z.object({mensaje_id:z.string().describe("ID del mensaje, por ejemplo msg-001")}),
+  parameters:{type:"object",properties:{mensaje_id:{type:"string"}},required:["mensaje_id"],additionalProperties:false},
+  async execute(args:{mensaje_id:string},ctx:ToolContext){try{return ok(await extractContract(ctx.directory,args.mensaje_id))}catch(error){return fail(error)}}
+}
+export const validar={
+  description:"Clasifica el contrato como nuevo, actualización, duplicado o rechazado y reporta campos que requieren revisión.",
+  args:z.object({mensaje_id:z.string(),contrato:ContractSchema}),
+  parameters:{type:"object",properties:{mensaje_id:{type:"string"},contrato:{type:"object"}},required:["mensaje_id","contrato"],additionalProperties:false},
+  async execute(args:{mensaje_id:string;contrato:ExtractedContract},ctx:ToolContext){try{return ok(await validateContract(ctx.directory,args.mensaje_id,args.contrato,ctx.clock.now().toISOString().slice(0,10)))}catch(error){return fail(error)}}
+}
+export const registrar={
+  description:"Registra o actualiza un contrato validado, archiva el adjunto y conserva historial; bloquea si requiere revisión sin confirmación.",
+  args:z.object({mensaje_id:z.string(),contrato:ContractSchema,confirmado:z.boolean().optional()}),
+  parameters:{type:"object",properties:{mensaje_id:{type:"string"},contrato:{type:"object"},confirmado:{type:"boolean"}},required:["mensaje_id","contrato"],additionalProperties:false},
+  async execute(args:{mensaje_id:string;contrato:ExtractedContract;confirmado?:boolean},ctx:ToolContext){try{return ok(await registerContract(ctx.directory,args.mensaje_id,args.contrato,args.confirmado===true,ctx.clock))}catch(error){return fail(error)}}
+}
+export const alertas={
+  description:"Genera el reporte de contratos que vencen pronto, pólizas pendientes y registros desde el corte del maestro.",
+  args:z.object({hoy:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Fecha de referencia YYYY-MM-DD")}),
+  parameters:{type:"object",properties:{hoy:{type:"string"}},required:["hoy"],additionalProperties:false},
+  async execute(args:{hoy:string},ctx:ToolContext){try{return ok(await buildAlerts(ctx.directory,args.hoy))}catch(error){return fail(error)}}
+}

@@ -1,0 +1,2 @@
+function norm(s:string){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+export function similarity(a:string,b:string){const x=norm(a),y=norm(b);if(x===y)return 1;const m=x.length,n=y.length;if(!m||!n)return 0;const dp=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i+=1){let prev=dp[0]??0;dp[0]=i;for(let j=1;j<=n;j+=1){const tmp=dp[j]??0;dp[j]=Math.min((dp[j]??0)+1,(dp[j-1]??0)+1,prev+(x[i-1]===y[j-1]?0:1));prev=tmp}}return 1-(dp[n]??Math.max(m,n))/Math.max(m,n)}

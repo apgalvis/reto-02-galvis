@@ -1,0 +1,5 @@
+import {z} from "zod"
+import type {ToolContext} from "./types.js"
+import {appendToolLog} from "./log.js"
+export type ToolDef<T extends z.ZodTypeAny>={description:string;args:T;parameters:Record<string,unknown>;execute(args:z.infer<T>,ctx:ToolContext):Promise<unknown>}
+export async function executeTool<T extends z.ZodTypeAny>(name:string,tool:ToolDef<T>,raw:unknown,ctx:ToolContext,meta?:{mensaje_id?:string}){try{const args=tool.args.parse(raw);const data=await tool.execute(args,ctx);await appendToolLog(ctx.directory,{ts:ctx.clock.now().toISOString(),herramienta:name,...(meta?.mensaje_id?{mensaje_id:meta.mensaje_id}:{}),ok:true,resumen:"ejecución correcta"});return JSON.stringify({ok:true,data})}catch(error){const message=error instanceof Error?error.message:"Error inesperado";await appendToolLog(ctx.directory,{ts:ctx.clock.now().toISOString(),herramienta:name,...(meta?.mensaje_id?{mensaje_id:meta.mensaje_id}:{}),ok:false,resumen:message});return JSON.stringify({ok:false,error:message})}}

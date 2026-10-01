@@ -1,0 +1,3 @@
+import path from "node:path"
+export function projectPath(directory:string,...parts:string[]){const root=path.resolve(directory);const target=path.resolve(root,...parts);if(target!==root&&!target.startsWith(root+path.sep))throw new Error("Ruta fuera del proyecto");return target}
+export function outPath(directory:string,...parts:string[]){const configured=process.env.OUT_DIR?.trim();const base=configured?path.resolve(configured):projectPath(directory,"out");const target=path.resolve(base,...parts);if(target!==base&&!target.startsWith(base+path.sep))throw new Error("Ruta fuera de OUT_DIR");return target}

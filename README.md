@@ -2,6 +2,12 @@
 
 Implementación TypeScript del reto técnico de Periferia IT Group.
 
+## Enlaces
+
+- **Aplicación pública:** https://reto-02-galvis.lovable.app
+- **Backend / Health:** https://reto-02-galvis-production.up.railway.app/api/health
+- **Repositorio:** https://github.com/apgalvis/reto-02-galvis
+
 ## Estado
 
 - Motor determinístico de extracción ✅
@@ -15,8 +21,11 @@ Implementación TypeScript del reto técnico de Periferia IT Group.
 - AgentLoop + OpenAI Responses API adapter ✅
 - API HTTP + sesiones ✅
 - Módulo reutilizable ✅
-- Front público ⏳
-- Deploy público ⏳
+- Front público en Lovable ✅
+- Backend público en Railway ✅
+- Persistencia mediante Railway Volume ✅
+- E2E publicado validado ✅
+- Frontend versionado en `frontend/` ✅
 
 ## Principio de arquitectura
 
@@ -98,3 +107,13 @@ El fixture `fixtures/reto-02/maestro-contratos.csv` nunca se modifica.
 ## Documentación
 
 Ver `SOLUCION.md` para arquitectura, ciclo del agente, extracción/confianza, regla de gobierno, trade-offs y riesgos productivos.
+
+## Validación E2E publicada
+
+- `msg-006`: clasificado como **Nuevo + Requiere revisión**, con los campos `valor` y `fecha_fin` visibles en la tarjeta de revisión humana; no se confirmó ni registró durante la validación final.
+- La UI mostró tool calls, tokens y sessionId sin errores de consola.
+- En una prueba previa, `msg-001` quedó registrado; por idempotencia, una ejecución posterior lo clasificó correctamente como duplicado.
+
+## Frontend versionado
+
+El código fuente de la UI publicada en Lovable está incluido en `frontend/` para que la entrega sea autocontenida.

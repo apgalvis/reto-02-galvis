@@ -50,7 +50,14 @@ La aplicación usa un adaptador propio para OpenAI Responses API. El modelo se c
 
 La arquitectura no depende del proveedor: reemplazar OpenAI requiere cambiar únicamente la implementación de `LlmAdapter`.
 
-El costo por caso se cerrará con una medición E2E real una vez publicado el frontend, porque depende de la longitud del contrato, el número de tool calls y el contexto acumulado. El sistema impone `MAX_AGENT_ITERATIONS`, `MAX_OUTPUT_TOKENS` y `MAX_SESSION_TOKENS` para evitar consumo abierto.
+El costo depende de la longitud del contrato, el número de tool calls y el contexto acumulado. En la validación publicada se observaron, por ejemplo:
+
+- `msg-006`: 1,391 tokens de entrada + 397 de salida = 1,788 totales.
+- `msg-001`: 2,891 tokens de entrada + 538 de salida = 3,429 totales.
+
+Con la tarifa estándar publicada para GPT-6 Astra al 2026-10-01 (USD 10 por millón de tokens de entrada y USD 50 por millón de salida), esos turnos equivalen aproximadamente a **USD 0.034** y **USD 0.056** respectivamente. Referencia: https://developers.openai.com/api/docs/models/gpt-6-astra
+
+El sistema impone `MAX_AGENT_ITERATIONS`, `MAX_OUTPUT_TOKENS` y `MAX_SESSION_TOKENS` para evitar consumo abierto.
 
 ## 5. Estrategia de extracción y confianza
 
@@ -203,7 +210,9 @@ Motivo: evita autoaprobación del modelo.
 | Alertas <=60 días | Hecho |
 | Pólizas pendientes | Hecho |
 | Gap desde corte | Hecho |
-| Front con tool calls visibles | Pendiente de publicación |
+| Front con tool calls visibles | Hecho |
+| Deploy público Railway + Lovable | Hecho |
+| Persistencia runtime en Volume | Hecho |
 | OCR | No hecho, P1 opcional |
 | Exchange / SharePoint reales | Fuera de alcance |
 
@@ -218,7 +227,7 @@ Resultados esperados verificados por tests:
 
 ## 10. Uso de IA
 
-Se utilizó ChatGPT para análisis del PRD, arquitectura, implementación, revisión de reglas, tests y coordinación del despliegue. Lovable se utilizará para la UI conversacional.
+Se utilizó ChatGPT para análisis del PRD, arquitectura, implementación, revisión de reglas, tests y coordinación del despliegue. Lovable se utilizó para construir y validar la UI conversacional publicada.
 
 No se delegan al modelo las decisiones críticas de clasificación, confianza, escritura del maestro ni cálculo de alertas. Se descartó trasladar reglas del dominio al frontend o al prompt porque reduciría auditabilidad.
 
@@ -237,3 +246,19 @@ No se delegan al modelo las decisiones críticas de clasificación, confianza, e
 | Reinicio del runtime | volumen persistente; en producción, DB/objeto duradero |
 | Sesión en memoria | Redis/DB en producción |
 | Costos del modelo | límites por iteración/sesión + medición de tokens |
+
+## 12. Validación final publicada
+
+URLs:
+
+- Frontend: https://reto-02-galvis.lovable.app
+- Health: https://reto-02-galvis-production.up.railway.app/api/health
+
+Validación E2E:
+
+- `msg-006` → **Nuevo + Requiere revisión** en `valor` y `fecha_fin`; tarjeta HITL correcta, sin confirmar ni registrar.
+- Tool calls visibles: `contratos_extraer` y `contratos_validar` con argumentos y resultado completo.
+- Tokens y sessionId visibles.
+- Cero errores de consola.
+- `msg-001` fue registrado en una prueba anterior; al reprocesarlo posteriormente se clasificó correctamente como duplicado, validando idempotencia.
+- El frontend publicado también está versionado dentro de `frontend/`.
